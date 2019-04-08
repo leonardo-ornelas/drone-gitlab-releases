@@ -118,8 +118,13 @@ func (p Plugin) Exec() error {
 		panic(err)
 	}
 
+	log.Print("url: " + client.BaseURL().String())
+
+	log.Println("Uploading assets...")
 	//todo: to support many assets
 	projectFile, _, err := client.Projects.UploadFile(p.Repo.FullName, normalizePath(p.Config.Asset))
+
+	log.Print("successful")
 
 	if err != nil {
 		return err
