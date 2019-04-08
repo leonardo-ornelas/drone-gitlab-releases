@@ -84,6 +84,14 @@ func parserBaseUrl(repoLink string, fullname string) string {
 	return strings.ReplaceAll(repoLink, fullname, "")
 }
 
+func getReleaseName(p Plugin) *string {
+	if p.Config.Name != "" {
+		return String(p.Config.Name)
+	} else {
+		return String(defaultReleaseName)
+	}
+}
+
 //Exec main plugin execution logic ... start here ...
 func (p Plugin) Exec() error {
 
@@ -93,30 +101,39 @@ func (p Plugin) Exec() error {
 		panic(err)
 	}
 
+	//todo: to support many assets
 	projectFile, _, err := client.Projects.UploadFile(p.Repo.FullName, p.Config.Asset)
 
 	if err != nil {
 		return err
 	}
 
-	opts := &gitlab.CreateReleaseOptions{
-		Description: &projectFile.Markdown,
-	}
-
-	if p.Build.Event == tagEvent {
-		opts.TagName = &p.Build.Tag
-	} else {
+	if p.Build.Event != tagEvent {
 		//todo: accept others events
 		return errors.New("event shoud be equals to tag")
 	}
 
-	if p.Config.Name != "" {
-		opts.Name = &p.Config.Name
-	} else {
-		opts.Name = String(defaultReleaseName)
-	}
+	rel, _, _ := client.Releases.GetRelease(p.Repo.FullName, p.Build.Tag)
 
-	_, _, err = client.Releases.CreateRelease(p.Repo.FullName, opts)
+	if rel != nil && rel.TagName != "" {
+		//update release
+		upOpts := gitlab.UpdateReleaseOptions{
+			Description: &projectFile.Markdown,
+			Name:        getReleaseName(p),
+		}
+
+		_, _, err = client.Releases.UpdateRelease(p.Repo.FullName, p.Build.Tag, &upOpts)
+	} else {
+		//create release
+		opts := &gitlab.CreateReleaseOptions{
+			Description: &projectFile.Markdown,
+			TagName:     &p.Build.Tag,
+			Name:        getReleaseName(p),
+		}
+
+		_, _, err = client.Releases.CreateRelease(p.Repo.FullName, opts)
+
+	}
 
 	return err
 }
