@@ -24,7 +24,7 @@ Build the Docker image with the following commands:
 
 ```
 GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -a -tags netgo -o release/linux/amd64/drone-gitlab-releases
-docker build --rm -t plugins/gitlab-release .
+docker build --rm -t plugins/gitlab-releases .
 ```
 
 ## Usage
@@ -40,5 +40,5 @@ docker run --rm \
   -e DRONE_REPO_LINK=https://gitlab.com/octocat/hello-world \
   -e DRONE_REPO=octocat/hello-world \
   -e DRONE_TAG=0.0.1 \
-  plugins/gitlab-release
+  plugins/gitlab-releases
 ```
