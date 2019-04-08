@@ -83,7 +83,7 @@ func String(v string) *string {
 }
 
 func parserBaseUrl(repoLink string, fullname string) string {
-	return strings.ReplaceAll(repoLink, fullname, "")
+	return strings.ReplaceAll(repoLink, fullname+".git", "")
 }
 
 func getReleaseName(p Plugin) *string {
@@ -114,7 +114,7 @@ func (p Plugin) Exec() error {
 
 	client := gitlab.NewClient(nil, p.Config.Token)
 
-	if err := client.SetBaseURL(parserBaseUrl(p.Repo.Link, p.Repo.FullName)); err != nil {
+	if err := client.SetBaseURL(parserBaseUrl(p.Commit.Remote, p.Repo.FullName)); err != nil {
 		panic(err)
 	}
 
