@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"github.com/xanzy/go-gitlab"
+	"log"
+	"path/filepath"
 	"strings"
 )
 
@@ -92,6 +94,21 @@ func getReleaseName(p Plugin) *string {
 	}
 }
 
+func normalizePath(file string) string {
+
+	matched, err := filepath.Glob(file)
+
+	if err != nil {
+		panic(err)
+	}
+
+	if matched == nil {
+		log.Fatal("Asset not found")
+	}
+
+	return matched[0]
+}
+
 //Exec main plugin execution logic ... start here ...
 func (p Plugin) Exec() error {
 
@@ -102,7 +119,7 @@ func (p Plugin) Exec() error {
 	}
 
 	//todo: to support many assets
-	projectFile, _, err := client.Projects.UploadFile(p.Repo.FullName, p.Config.Asset)
+	projectFile, _, err := client.Projects.UploadFile(p.Repo.FullName, normalizePath(p.Config.Asset))
 
 	if err != nil {
 		return err
