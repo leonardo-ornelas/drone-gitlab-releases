@@ -6,7 +6,8 @@
 [![Join the discussion at https://discourse.drone.io](https://img.shields.io/badge/discourse-forum-orange.svg)](https://discourse.drone.io)
 [![Drone questions at https://stackoverflow.com](https://img.shields.io/badge/drone-stackoverflow-orange.svg)](https://stackoverflow.com/questions/tagged/drone.io)
 
-[![](https://images.microbadger.com/badges/image/alexgamas/drone-rocketchat.svg)](https://microbadger.com/images/alexgamas/drone-rocketchat "Get your own image badge on microbadger.com")
+[![](https://images.microbadger.com/badges/image/solutisdigital/drone-gitlab-releases.svg)](https://microbadger.com/images/solutisdigital/drone-gitlab-releases "Get your own image badge on microbadger.com")
+[![](https://images.microbadger.com/badges/version/solutisdigital/drone-gitlab-releases.svg)](https://microbadger.com/images/solutisdigital/drone-gitlab-releases "Get your own version badge on microbadger.com")
 
 Drone plugin for creating a GitLab release. 
 
@@ -37,7 +38,7 @@ docker run --rm \
   -e PLUGIN_NAME="Release Name" \
   -e PLUGIN_TOKEN=gitLabToken \
   -e DRONE_BUILD_EVENT=tag \
-  -e DRONE_REPO_LINK=https://gitlab.com/octocat/hello-world \
+  -e DRONE_REMOTE_URL=https://gitlab.com/octocat/hello-world.git \
   -e DRONE_REPO=octocat/hello-world \
   -e DRONE_TAG=0.0.1 \
   plugins/gitlab-releases
