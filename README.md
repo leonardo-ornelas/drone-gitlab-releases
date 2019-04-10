@@ -34,7 +34,7 @@ Execute from the working directory:
 
 ```
 docker run --rm \
-  -e PLUGIN_ASSET=example.zip \
+  -e PLUGIN_ASSETS=example.zip \
   -e PLUGIN_NAME="Release Name" \
   -e PLUGIN_TOKEN=gitLabToken \
   -e DRONE_BUILD_EVENT=tag \
