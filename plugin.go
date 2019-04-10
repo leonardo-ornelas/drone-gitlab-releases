@@ -60,9 +60,9 @@ type (
 
 	//Config plugin-specific parameters and secrets
 	Config struct {
-		Token string
-		Asset string
-		Name  string
+		Token  string
+		Assets []string
+		Name   string
 	}
 
 	//Plugin main structure
@@ -103,7 +103,7 @@ func normalizePath(file string) string {
 	}
 
 	if matched == nil {
-		log.Fatal("Asset not found")
+		log.Fatal("Assets not found:" + file)
 	}
 
 	return matched[0]
@@ -120,15 +120,19 @@ func (p Plugin) Exec() error {
 
 	log.Print("url: " + client.BaseURL().String())
 
+	var markdowns []string
 	log.Println("Uploading assets...")
-	//todo: to support many assets
-	projectFile, _, err := client.Projects.UploadFile(p.Repo.FullName, normalizePath(p.Config.Asset))
+	for _, asset := range p.Config.Assets {
+		projectFile, _, err := client.Projects.UploadFile(p.Repo.FullName, normalizePath(asset))
+
+		if err != nil {
+			return err
+		}
+
+		markdowns = append(markdowns, projectFile.Markdown)
+	}
 
 	log.Print("successful")
-
-	if err != nil {
-		return err
-	}
 
 	if p.Build.Event != tagEvent {
 		//todo: accept others events
@@ -140,22 +144,24 @@ func (p Plugin) Exec() error {
 	if rel != nil && rel.TagName != "" {
 		//update release
 		upOpts := gitlab.UpdateReleaseOptions{
-			Description: &projectFile.Markdown,
+			Description: String(strings.Join(markdowns, " ")),
 			Name:        getReleaseName(p),
 		}
 
-		_, _, err = client.Releases.UpdateRelease(p.Repo.FullName, p.Build.Tag, &upOpts)
+		_, _, err := client.Releases.UpdateRelease(p.Repo.FullName, p.Build.Tag, &upOpts)
+
+		return err
+
 	} else {
 		//create release
 		opts := &gitlab.CreateReleaseOptions{
-			Description: &projectFile.Markdown,
+			Description: String(strings.Join(markdowns, "")),
 			TagName:     &p.Build.Tag,
 			Name:        getReleaseName(p),
 		}
 
-		_, _, err = client.Releases.CreateRelease(p.Repo.FullName, opts)
+		_, _, err := client.Releases.CreateRelease(p.Repo.FullName, opts)
 
+		return err
 	}
-
-	return err
 }

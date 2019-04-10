@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	version = "0.0.1"
+	version = "0.0.2"
 )
 
 func main() {
@@ -219,10 +219,10 @@ func main() {
 			EnvVar: "PLUGIN_TOKEN,GITLAB_TOKEN",
 			Name:   "authToken",
 		},
-		cli.StringFlag{
+		cli.StringSliceFlag{
 			Usage:  "Gitlab file",
-			EnvVar: "PLUGIN_ASSET",
-			Name:   "asset",
+			EnvVar: "PLUGIN_ASSETS",
+			Name:   "assets",
 		},
 		cli.StringFlag{
 			Usage:  "release name",
@@ -278,9 +278,9 @@ func run(c *cli.Context) error {
 		},
 		Config: Config{
 			// plugin-specific parameters
-			Asset: c.String("asset"),
-			Token: c.String("authToken"),
-			Name: c.String("name"),
+			Assets: c.StringSlice("assets"),
+			Token:  c.String("authToken"),
+			Name:   c.String("name"),
 		},
 	}
 
