@@ -129,7 +129,7 @@ func (p Plugin) Exec() error {
 			return err
 		}
 
-		markdowns = append(markdowns, projectFile.Markdown)
+		markdowns = append(markdowns, "*  "+projectFile.Markdown)
 	}
 
 	log.Print("successful")
@@ -144,7 +144,7 @@ func (p Plugin) Exec() error {
 	if rel != nil && rel.TagName != "" {
 		//update release
 		upOpts := gitlab.UpdateReleaseOptions{
-			Description: String(strings.Join(markdowns, " ")),
+			Description: String(strings.Join(markdowns, "\r\n")),
 			Name:        getReleaseName(p),
 		}
 
