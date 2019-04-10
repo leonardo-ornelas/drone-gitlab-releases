@@ -10,7 +10,7 @@ steps:
   image: solutisdigital/drone-gitlab-releases
   settings:
     token: authtoken
-    asset: asset.zip
+    assets: asset.zip
 ```
 
 Example configuration using credentials from secrets:
@@ -20,7 +20,7 @@ steps:
 - name: release
   image: solutisdigital/drone-gitlab-releases
   settings:
-    asset: asset.zip
+    assets: asset.zip
     token:
       from_secret: gitlab_token    
 ```
