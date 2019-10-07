@@ -1,9 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 	"log"
-	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -117,54 +118,44 @@ func normalizePath(file string) string {
 	return matched[0]
 }
 
+func getReleaseTemplate(p Plugin) string {
+	if !isEmpty(&p.Config.ReleaseTemplate) {
+		return p.Config.ReleaseTemplate
+	}
+	return "Commit message: {{.Commit.Message}}"
+}
+
 //Exec main plugin execution logic ... start here ...
 func (p Plugin) Exec() error {
 
-	if !isEmpty(&p.Config.ReleaseTemplate) {
-		tmpl, err := template.New("test").Parse(`{{.}}`)
+	var releaseMessageTemplate = getReleaseTemplate(p)
 
-		if err != nil {
-			panic(err)
-		}
-		err = tmpl.Execute(os.Stdout, p)
-		if err != nil {
-			panic(err)
-		}
+	tmpl, err := template.New("release-message").Parse(releaseMessageTemplate)
 
-		// renderedTemplate, err := template.Render("plugin template", &p)
-		// renderedTemplate, _ := template.RenderTrim("plugin template", p)
-		// print(renderedTemplate)
-		// print(err)
-
+	if err != nil {
+		return err
 	}
 
-	// if !isEmpty(&p.Config.Template) {
+	buf := new(bytes.Buffer)
 
-	// 	if err != nil {
-	// 		return err
-	// 	}
+	err = tmpl.Execute(buf, p)
 
-	// 	// attachment.Text = txt
+	if err != nil {
+		return err
+	}
 
-	// }
+	var releaseMessage = buf.String()
 
 	client := gitlab.NewClient(nil, p.Config.Token)
 
 	if err := client.SetBaseURL(parserBaseURL(p.Commit.Remote, p.Repo.FullName)); err != nil {
-		panic(err)
+		return err
 	}
 
-	log.Print("url: " + client.BaseURL().String())
-
-	// type ReleaseAssetLink struct {
-	// 	Name string `url:"name" json:"name"`
-	// 	URL  string `url:"url" json:"url"`
-	// }
+	log.Println(fmt.Sprintf("URL: %s", client.BaseURL().String()))
 
 	var assetLinks []*gitlab.ReleaseAssetLink
-	// = make([]gitlab.ReleaseAssetLink, 0)
 
-	// var markdowns []string
 	log.Println("Uploading assets...")
 	for _, asset := range p.Config.Assets {
 		projectFile, _, err := client.Projects.UploadFile(p.Repo.FullName, normalizePath(asset))
@@ -174,23 +165,22 @@ func (p Plugin) Exec() error {
 		}
 
 		var ral = gitlab.ReleaseAssetLink{Name: projectFile.Alt, URL: projectFile.URL}
-		assetLinks = append(assetLinks, &ral)
 
-		// markdowns = append(markdowns, "*  "+projectFile.Markdown)
+		log.Println(fmt.Sprintf("Uploading asset: %s", projectFile.URL))
+
+		assetLinks = append(assetLinks, &ral)
 
 	}
 
-	log.Print("successful")
+	log.Print("Successful uploaded.")
 
 	if p.Build.Event != tagEvent {
 		//todo: accept others events
-		return errors.New("event shoud be equals to tag")
+		return errors.New("Event shoud be TAG")
 	}
 
 	rel, _, _ := client.Releases.GetRelease(p.Repo.FullName, p.Build.Tag)
 
-	//TODO: use is emptyfunction
-	// rel != nil && rel.TagName != ""
 	if !isEmpty(&rel.TagName) {
 
 		// //update release
@@ -203,7 +193,7 @@ func (p Plugin) Exec() error {
 		_, _, err := client.Releases.DeleteRelease(p.Repo.FullName, p.Build.Tag)
 
 		if err != nil {
-			print(err)
+			return err
 		}
 
 		// _, _, err := client.Releases.UpdateRelease(p.Repo.FullName, p.Build.Tag, &upOpts)
@@ -211,18 +201,16 @@ func (p Plugin) Exec() error {
 	}
 
 	releaseAssets := gitlab.ReleaseAssets{Links: assetLinks}
-	// releaseAssets.Links
-	print(&releaseAssets)
 
 	//create release
 	opts := &gitlab.CreateReleaseOptions{
 		// Description: String(strings.Join(markdowns, "")),
-		Description: String("desc"),
+		Description: &releaseMessage,
 		TagName:     &p.Build.Tag,
 		Name:        getReleaseName(p),
 		Assets:      &releaseAssets,
 	}
-	_, _, err := client.Releases.CreateRelease(p.Repo.FullName, opts)
+	_, _, err = client.Releases.CreateRelease(p.Repo.FullName, opts)
 	return err
 
 }
