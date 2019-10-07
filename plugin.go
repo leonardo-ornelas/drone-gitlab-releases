@@ -2,10 +2,14 @@ package main
 
 import (
 	"errors"
-	"github.com/xanzy/go-gitlab"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
+	"text/template"
+
+	// "github.com/drone/drone-template-lib/template"
+	"github.com/xanzy/go-gitlab"
 )
 
 const (
@@ -60,9 +64,10 @@ type (
 
 	//Config plugin-specific parameters and secrets
 	Config struct {
-		Token  string
-		Assets []string
-		Name   string
+		Token           string
+		Assets          []string
+		Name            string
+		ReleaseTemplate string
 	}
 
 	//Plugin main structure
@@ -82,16 +87,19 @@ func String(v string) *string {
 	return p
 }
 
-func parserBaseUrl(repoLink string, fullname string) string {
+func isEmpty(s *string) bool {
+	return s == nil || len(strings.TrimSpace(*s)) == 0
+}
+
+func parserBaseURL(repoLink string, fullname string) string {
 	return strings.ReplaceAll(repoLink, fullname+".git", "")
 }
 
 func getReleaseName(p Plugin) *string {
 	if p.Config.Name != "" {
 		return String(p.Config.Name)
-	} else {
-		return String(defaultReleaseName)
 	}
+	return String(defaultReleaseName)
 }
 
 func normalizePath(file string) string {
@@ -112,15 +120,51 @@ func normalizePath(file string) string {
 //Exec main plugin execution logic ... start here ...
 func (p Plugin) Exec() error {
 
+	if !isEmpty(&p.Config.ReleaseTemplate) {
+		tmpl, err := template.New("test").Parse(`{{.}}`)
+
+		if err != nil {
+			panic(err)
+		}
+		err = tmpl.Execute(os.Stdout, p)
+		if err != nil {
+			panic(err)
+		}
+
+		// renderedTemplate, err := template.Render("plugin template", &p)
+		// renderedTemplate, _ := template.RenderTrim("plugin template", p)
+		// print(renderedTemplate)
+		// print(err)
+
+	}
+
+	// if !isEmpty(&p.Config.Template) {
+
+	// 	if err != nil {
+	// 		return err
+	// 	}
+
+	// 	// attachment.Text = txt
+
+	// }
+
 	client := gitlab.NewClient(nil, p.Config.Token)
 
-	if err := client.SetBaseURL(parserBaseUrl(p.Commit.Remote, p.Repo.FullName)); err != nil {
+	if err := client.SetBaseURL(parserBaseURL(p.Commit.Remote, p.Repo.FullName)); err != nil {
 		panic(err)
 	}
 
 	log.Print("url: " + client.BaseURL().String())
 
-	var markdowns []string
+	// type ReleaseAssetLink struct {
+	// 	Name string `url:"name" json:"name"`
+	// 	URL  string `url:"url" json:"url"`
+	// }
+
+	var assetLinks []*gitlab.ReleaseAssetLink
+	// = make([]gitlab.ReleaseAssetLink, 0)
+
+	// var markdowns []string
 	log.Println("Uploading assets...")
 	for _, asset := range p.Config.Assets {
 		projectFile, _, err := client.Projects.UploadFile(p.Repo.FullName, normalizePath(asset))
@@ -129,7 +173,11 @@ func (p Plugin) Exec() error {
 			return err
 		}
 
-		markdowns = append(markdowns, "*  "+projectFile.Markdown)
+		var ral = gitlab.ReleaseAssetLink{Name: projectFile.Alt, URL: projectFile.URL}
+		assetLinks = append(assetLinks, &ral)
+
+		// markdowns = append(markdowns, "*  "+projectFile.Markdown)
+
 	}
 
 	log.Print("successful")
@@ -141,27 +189,40 @@ func (p Plugin) Exec() error {
 
 	rel, _, _ := client.Releases.GetRelease(p.Repo.FullName, p.Build.Tag)
 
-	if rel != nil && rel.TagName != "" {
-		//update release
-		upOpts := gitlab.UpdateReleaseOptions{
-			Description: String(strings.Join(markdowns, "\r\n")),
-			Name:        getReleaseName(p),
+	//TODO: use is emptyfunction
+	// rel != nil && rel.TagName != ""
+	if !isEmpty(&rel.TagName) {
+
+		// //update release
+		// upOpts := gitlab.UpdateReleaseOptions{
+		// 	// Description: String(strings.Join(markdowns, "\r\n")),
+		// 	Description: String("descricao3"),
+		// 	Name:        getReleaseName(p),
+		// }
+
+		_, _, err := client.Releases.DeleteRelease(p.Repo.FullName, p.Build.Tag)
+
+		if err != nil {
+			print(err)
 		}
 
-		_, _, err := client.Releases.UpdateRelease(p.Repo.FullName, p.Build.Tag, &upOpts)
-
-		return err
-
-	} else {
-		//create release
-		opts := &gitlab.CreateReleaseOptions{
-			Description: String(strings.Join(markdowns, "")),
-			TagName:     &p.Build.Tag,
-			Name:        getReleaseName(p),
-		}
-
-		_, _, err := client.Releases.CreateRelease(p.Repo.FullName, opts)
-
-		return err
+		// _, _, err := client.Releases.UpdateRelease(p.Repo.FullName, p.Build.Tag, &upOpts)
+		// return err
 	}
+
+	releaseAssets := gitlab.ReleaseAssets{Links: assetLinks}
+	// releaseAssets.Links
+	print(&releaseAssets)
+
+	//create release
+	opts := &gitlab.CreateReleaseOptions{
+		// Description: String(strings.Join(markdowns, "")),
+		Description: String("desc"),
+		TagName:     &p.Build.Tag,
+		Name:        getReleaseName(p),
+		Assets:      &releaseAssets,
+	}
+	_, _, err := client.Releases.CreateRelease(p.Repo.FullName, opts)
+	return err
+
 }
