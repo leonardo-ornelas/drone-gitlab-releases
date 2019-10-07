@@ -218,9 +218,10 @@ func main() {
 
 		// plugin args
 		cli.StringFlag{
-			Usage:  "Gitlab token",
-			EnvVar: "PLUGIN_TOKEN,GITLAB_TOKEN",
-			Name:   "authToken",
+			Usage:    "Gitlab token",
+			EnvVar:   "PLUGIN_TOKEN,GITLAB_TOKEN",
+			Name:     "authToken",
+			Required: true,
 		},
 		cli.StringSliceFlag{
 			Usage:  "Gitlab file",
