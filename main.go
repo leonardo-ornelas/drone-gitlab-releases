@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/joho/godotenv"
-	"github.com/urfave/cli"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
+	"github.com/urfave/cli"
 )
 
 var (
@@ -14,7 +15,9 @@ var (
 func main() {
 
 	// Load env-file if it exists first
-	if env := os.Getenv("PLUGIN_ENV_FILE"); env != "" {
+	env := os.Getenv("PLUGIN_ENV_FILE")
+
+	if env != "" {
 		_ = godotenv.Load(env)
 	}
 
@@ -215,9 +218,10 @@ func main() {
 
 		// plugin args
 		cli.StringFlag{
-			Usage:  "Gitlab token",
-			EnvVar: "PLUGIN_TOKEN,GITLAB_TOKEN",
-			Name:   "authToken",
+			Usage:    "Gitlab token",
+			EnvVar:   "PLUGIN_TOKEN,GITLAB_TOKEN",
+			Name:     "authToken",
+			Required: true,
 		},
 		cli.StringSliceFlag{
 			Usage:  "Gitlab file",
@@ -228,6 +232,11 @@ func main() {
 			Usage:  "release name",
 			EnvVar: "PLUGIN_NAME",
 			Name:   "name",
+		},
+		cli.StringFlag{
+			Usage:  "release template",
+			EnvVar: "PLUGIN_RELEASE_TEMPLATE",
+			Name:   "releaseTemplate",
 		},
 	}
 
@@ -278,9 +287,10 @@ func run(c *cli.Context) error {
 		},
 		Config: Config{
 			// plugin-specific parameters
-			Assets: c.StringSlice("assets"),
-			Token:  c.String("authToken"),
-			Name:   c.String("name"),
+			Assets:          c.StringSlice("assets"),
+			Token:           c.String("authToken"),
+			Name:            c.String("name"),
+			ReleaseTemplate: c.String("releaseTemplate"),
 		},
 	}
 

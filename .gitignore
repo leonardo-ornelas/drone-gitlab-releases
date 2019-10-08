@@ -33,3 +33,5 @@ coverage.out
 # Name of your binary
 drone-gitlab-releases
 .idea/
+.vscode
+http-client.env.json
