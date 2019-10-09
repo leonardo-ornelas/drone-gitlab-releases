@@ -140,7 +140,7 @@ func getReleaseTemplate(p Plugin) string {
 	if !isEmpty(&p.Config.ReleaseTemplate) {
 		return p.Config.ReleaseTemplate
 	}
-	return "Commit message: {{.Commit.Message}}"
+	return "## Release notes\n> Commit message: {{.Commit.Message}}"
 }
 
 //Exec main plugin execution logic ... start here ...
