@@ -41,5 +41,11 @@ docker run --rm \
   -e DRONE_REMOTE_URL=https://gitlab.com/octocat/hello-world.git \
   -e DRONE_REPO=octocat/hello-world \
   -e DRONE_TAG=0.0.1 \
+  -e DRONE_COMMIT_MESSAGE="template and release link assets" \
+  -e PLUGIN_RELEASE_TEMPLATE = "## Release Notes\n*Commit message*: {{.Commit.Message}}"
   plugins/gitlab-releases
 ```
+
+
+> Default PLUGIN_RELEASE_TEMPLATE value is
+`"## Release Notes\n*Commit message*: {{.Commit.Message}}"`

@@ -98,6 +98,11 @@ func parserBaseURL(repoLink string, fullname string) string {
 }
 
 func resolveURL(base string, context string) string {
+
+	sbaseURL, err := url.Parse("https://gitlab.solutis.digital/sabesp/release-test.git")
+
+	fmt.Println(sbaseURL)
+
 	baseURL, err := url.Parse(base)
 
 	if err != nil {
@@ -140,7 +145,7 @@ func getReleaseTemplate(p Plugin) string {
 	if !isEmpty(&p.Config.ReleaseTemplate) {
 		return p.Config.ReleaseTemplate
 	}
-	return "Commit message: {{.Commit.Message}}"
+	return "## Release Notes\n*Commit message*: {{.Commit.Message}}"
 }
 
 //Exec main plugin execution logic ... start here ...
