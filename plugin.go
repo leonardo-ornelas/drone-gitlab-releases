@@ -10,7 +10,6 @@ import (
 	"strings"
 	"text/template"
 
-	// "github.com/drone/drone-template-lib/template"
 	"github.com/xanzy/go-gitlab"
 )
 
@@ -66,10 +65,13 @@ type (
 
 	//Config plugin-specific parameters and secrets
 	Config struct {
-		Token           string
-		Assets          []string
-		Name            string
-		ReleaseTemplate string
+		Token                  string
+		Assets                 []string
+		Name                   string
+		BaseRepoURL            string
+		ReleaseTemplate        string
+		AlternativeRepoBaseURL string
+		AlternativeRepoName    string
 	}
 
 	//Plugin main structure
@@ -93,16 +95,12 @@ func isEmpty(s *string) bool {
 	return s == nil || len(strings.TrimSpace(*s)) == 0
 }
 
-func parserBaseURL(repoLink string, fullname string) string {
-	return strings.ReplaceAll(repoLink, fullname+".git", "")
+func parserBaseURL(repoLink string) string {
+	repoLinkURL, _ := url.Parse(repoLink)
+	return fmt.Sprintf("%s://%s", repoLinkURL.Scheme, repoLinkURL.Host)
 }
 
-func resolveURL(base string, context string) string {
-
-	sbaseURL, err := url.Parse("https://gitlab.solutis.digital/sabesp/release-test.git")
-
-	fmt.Println(sbaseURL)
-
+func resolveAssetURL(base string, context string) string {
 	baseURL, err := url.Parse(base)
 
 	if err != nil {
@@ -116,29 +114,44 @@ func resolveURL(base string, context string) string {
 	}
 
 	return baseURL.ResolveReference(contextURL).String()
-
 }
 
 func getReleaseName(p Plugin) *string {
-	if p.Config.Name != "" {
+	if !isEmpty(&p.Config.Name) {
 		return String(p.Config.Name)
 	}
 	return String(defaultReleaseName)
 }
 
-func normalizePath(file string) string {
+func normalizePath(file string) ([]string, error) {
 
 	matched, err := filepath.Glob(file)
 
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	if matched == nil {
-		log.Fatal("Assets not found:" + file)
+		return nil, fmt.Errorf("Assets not found: %s", file)
 	}
 
-	return matched[0]
+	return matched, nil
+}
+
+func plainAssets(rawAssets []string) []string {
+
+	var plainAssetList []string
+
+	for _, rawAsset := range rawAssets {
+		_a, err := normalizePath(rawAsset)
+		if err == nil {
+			plainAssetList = append(plainAssetList, _a...)
+		} else {
+			log.Println(err)
+		}
+	}
+
+	return plainAssetList
 }
 
 func getReleaseTemplate(p Plugin) string {
@@ -171,36 +184,44 @@ func (p Plugin) Exec() error {
 
 	client := gitlab.NewClient(nil, p.Config.Token)
 
-	if err := client.SetBaseURL(parserBaseURL(p.Commit.Remote, p.Repo.FullName)); err != nil {
+	baseURL := parserBaseURL(p.Commit.Remote)
+	log.Println(fmt.Sprintf("%-20s: %s", "Base URL", baseURL))
+
+	if err := client.SetBaseURL(baseURL); err != nil {
 		return err
 	}
 
-	log.Println(fmt.Sprintf("URL: %s", client.BaseURL().String()))
+	repoFullName := p.Repo.FullName
+	log.Println(fmt.Sprintf("%-20s: %s", "Repo Full Name", repoFullName))
+
+	repoURL := resolveAssetURL(baseURL, repoFullName)
+	log.Println(fmt.Sprintf("%-20s: %s", "Repo URL", repoURL))
+
+	assets := plainAssets(p.Config.Assets)
+
+	if assets == nil {
+		return errors.New("Assets list must have values")
+	}
 
 	var assetLinks []*gitlab.ReleaseAssetLink
 
 	log.Println("Uploading assets...")
-	for _, asset := range p.Config.Assets {
 
-		var path = normalizePath(asset)
+	for _, asset := range assets {
 
-		log.Print(fmt.Sprintf("Uploading asset: %s ", path))
+		log.Print(fmt.Sprintf("%-20s: %s", "Uploading asset", asset))
 
-		projectFile, _, err := client.Projects.UploadFile(p.Repo.FullName, path)
+		projectFile, _, err := client.Projects.UploadFile(repoFullName, asset)
 
 		if err != nil {
 			log.Println("Error")
 			return err
 		}
 
-		log.Println(fmt.Sprintf("done. [%s]", projectFile.URL))
-
-		var repoURL = resolveURL(p.Commit.Remote, p.Repo.FullName)
+		log.Println(fmt.Sprintf("%-20s: %s", "Done", projectFile.URL))
 
 		assetURL := fmt.Sprintf("%s%s", repoURL, projectFile.URL)
-
 		var ral = gitlab.ReleaseAssetLink{Name: projectFile.Alt, URL: assetURL}
-
 		assetLinks = append(assetLinks, &ral)
 
 	}
