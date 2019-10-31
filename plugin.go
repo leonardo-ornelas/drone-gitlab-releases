@@ -65,13 +65,11 @@ type (
 
 	//Config plugin-specific parameters and secrets
 	Config struct {
-		Token                  string
-		Assets                 []string
-		Name                   string
-		BaseRepoURL            string
-		ReleaseTemplate        string
-		AlternativeRepoBaseURL string
-		AlternativeRepoName    string
+		Token           string
+		Assets          []string
+		Name            string
+		BaseRepoURL     string
+		ReleaseTemplate string
 	}
 
 	//Plugin main structure

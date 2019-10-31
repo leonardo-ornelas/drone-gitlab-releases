@@ -238,16 +238,6 @@ func main() {
 			EnvVar: "PLUGIN_RELEASE_TEMPLATE",
 			Name:   "releaseTemplate",
 		},
-		cli.StringFlag{
-			Usage:  "Alternative repo base URL",
-			EnvVar: "PLUGIN_ALTERNATIVE_BASE_REPO_URL",
-			Name:   "alternativeRepoBaseURL",
-		},
-		cli.StringFlag{
-			Usage:  "Alternative repo name",
-			EnvVar: "PLUGIN_ALTERNATIVE_REPO_NAME",
-			Name:   "alternativeRepoName",
-		},
 	}
 
 	if err := app.Run(os.Args); err != nil {
@@ -297,12 +287,10 @@ func run(c *cli.Context) error {
 		},
 		Config: Config{
 			// plugin-specific parameters
-			Assets:                 c.StringSlice("assets"),
-			Token:                  c.String("authToken"),
-			Name:                   c.String("name"),
-			AlternativeRepoBaseURL: c.String("alternativeRepoBaseURL"),
-			AlternativeRepoName:    c.String("alternativeRepoName"),
-			ReleaseTemplate:        c.String("releaseTemplate"),
+			Assets:          c.StringSlice("assets"),
+			Token:           c.String("authToken"),
+			Name:            c.String("name"),
+			ReleaseTemplate: c.String("releaseTemplate"),
 		},
 	}
 
