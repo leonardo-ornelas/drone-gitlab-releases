@@ -14,6 +14,7 @@ const (
 
 func main() {
 
+
 	// Load env-file if exists.
 	env := os.Getenv("PLUGIN_ENV_FILE")
 
@@ -22,8 +23,8 @@ func main() {
 	}
 
 	app := cli.NewApp()
-	app.Name = "Gitlab release"
-	app.Usage = "Gitlab release plugin"
+	app.Name = "Gitlab releases"
+	app.Usage = "Gitlab releases plugin"
 	app.Action = run
 	app.Version = version
 	app.Flags = []cli.Flag{
