@@ -1,0 +1,39 @@
+kind: pipeline
+name: linux-amd64
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build-push
+  pull: always
+  image: golang:1.12
+  commands:
+  - "go build -v -ldflags \"-X main.version=${DRONE_COMMIT_SHA:0:8}\" -a -tags netgo -o release/linux/amd64/drone-npm"
+  environment:
+    CGO_ENABLED: 0
+
+# - name: publish
+#   pull: always
+#   image: plugins/docker:linux-amd64
+#   settings:
+#     auto_tag: true
+#     auto_tag_suffix: linux-amd64
+#     daemon_off: false
+#     dockerfile: docker/Dockerfile.linux.amd64
+#     password:
+#       from_secret: docker_password
+#     repo: plugins/npm
+#     username:
+#       from_secret: docker_username
+#   when:
+#     event:
+#       exclude:
+#       - pull_request
+
+trigger:
+  branch:
+  - master
+
+...
