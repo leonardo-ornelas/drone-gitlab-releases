@@ -1,11 +1,12 @@
+# Drone gitlab releases
 
-The Gitlab release plugin create releases. The below pipeline configuration demonstrates simple usage:
+## The Gitlab release plugin create releases. The below pipeline configuration demonstrates simple usage:
 
 ```yaml
 kind: pipeline
 name: default
 
-steps:    
+steps:
 - name: release
   image: solutisdigital/drone-gitlab-releases
   settings:
@@ -13,7 +14,7 @@ steps:
     assets: asset.zip
 ```
 
-Example configuration using credentials from secrets:
+## Example configuration using credentials from secrets:
 
 ```yaml
 steps:
@@ -22,5 +23,5 @@ steps:
   settings:
     assets: asset.zip
     token:
-      from_secret: gitlab_token    
+      from_secret: gitlab_token
 ```

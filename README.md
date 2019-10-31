@@ -46,6 +46,5 @@ docker run --rm \
   plugins/gitlab-releases
 ```
 
-
 > Default PLUGIN_RELEASE_TEMPLATE value is
 `"## Release Notes\n*Commit message*: {{.Commit.Message}}"`
