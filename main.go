@@ -8,13 +8,14 @@ import (
 	"github.com/urfave/cli"
 )
 
-var (
-	version = "0.0.2"
+const (
+	version = "0.0.3"
 )
 
 func main() {
 
-	// Load env-file if it exists first
+
+	// Load env-file if exists.
 	env := os.Getenv("PLUGIN_ENV_FILE")
 
 	if env != "" {
